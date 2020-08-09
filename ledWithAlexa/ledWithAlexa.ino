@@ -11,12 +11,13 @@
 
 Adafruit_NeoPixel strip(60, LED_PIN_STRIP, NEO_GRB + NEO_KHZ800);
 fauxmoESP fauxmo;
+boolean runningStrip = false;
 
 void setup()
 {
   Serial.begin(115200);
   strip.clear();
-  
+
   if (wifiSetup()) {
     // Setup fauxmo
     fauxmo.setPort(80);
@@ -36,27 +37,34 @@ void setup()
         if (state)
         {
           Serial.println("turn on");
-          strip.fill(strip.Color(200, 100, 200), 0, 60);
-          strip.show();
+          runningStrip = true;
         }
         else
         {
           Serial.println("turn off");
-          turnOffStrip();
+          runningStrip = false;
         }
       }
     });
   }
 
-  strip.begin(); // This initializes the NeoPixel library.
-  strip.show(); // Initialize all pixels to 'off'
-  pinMode(LED_PIN , OUTPUT);  //definir pin como salida
+  strip.begin(); 
+  strip.show(); 
+  pinMode(LED_PIN , OUTPUT); 
 }
 
 void loop()
 {
   controlTestLed();
   fauxmo.handle();
+
+  if (runningStrip) {
+    Serial.println("turn on strip with multi color");
+    controlStrip();
+  } else {
+    Serial.println("turn off strip from loop");
+    turnOffStrip();
+  }
 }
 
 
@@ -78,10 +86,38 @@ boolean wifiSetup() {
 
 void controlTestLed()
 {
-  digitalWrite(LED_PIN , HIGH);   // poner el Pin en HIGH
-  delay(1000);                   // esperar un segundo
-  digitalWrite(LED_PIN , LOW);    // poner el Pin en LOW
+  digitalWrite(LED_PIN , HIGH);
+  delay(1000);                  
+  digitalWrite(LED_PIN , LOW);   
   delay(1000);
+}
+
+void controlStrip()
+{
+  int numberOfPins = strip.numPixels();
+  for (int red = 0; red < 4; red++) {
+    for (int green = 0; green < 4; green++) {
+      for (int blue = 0; blue < 4; blue++) {
+        for (int pinLed = 0; pinLed < numberOfPins; pinLed++) {
+          int redColor = (red * 85);
+          int greenColor = (green * 85);
+          int blueColor = (blue * 85);
+          
+          Serial.println("Color: ");
+          Serial.print(redColor);
+          Serial.print(", ");
+          Serial.print(greenColor);
+          Serial.print(", ");
+          Serial.print(blueColor);
+          Serial.print(", ");
+          
+          strip.setPixelColor(pinLed, strip.Color(redColor, greenColor, blueColor)); 
+          strip.show(); 
+          delay(100); 
+        }
+      }
+    }
+  }
 }
 
 
